@@ -59,15 +59,19 @@ def get_company_profile(company_name: str) -> str:
         search_resp = requests.get(search_url, timeout=10, headers=HEADERS)
         if search_resp.status_code == 200:
             results = search_resp.json().get("query", {}).get("search", [])
-            # Prefer result with "Inc.", "Corp.", "Company" in title, or just first
+            # Score results: exact match > partial match > English suffixes
             scored = []
+            company_lower = company_name.lower()
             for r in results:
                 title = r["title"]
+                title_lower = title.lower()
                 score = 0
-                if "Inc." in title or "Corp." in title or "company" in title.lower():
+                if title_lower == company_lower:
+                    score += 3
+                elif company_lower in title_lower or title_lower in company_lower:
                     score += 2
-                if company_name.lower() in title.lower():
-                    score += 1
+                if "inc." in title_lower or "corp." in title_lower or "company" in title_lower:
+                    score += 0.5
                 scored.append((score, title))
             scored.sort(key=lambda x: -x[0])
             if scored:
@@ -110,7 +114,7 @@ def get_financial_news(company_name: str) -> list[str]:
             client = TavilyClient(api_key=tavily_key)
             response = client.search(
                 query=f"{company_name} financial news",
-                max_results=5,
+                max_results=3,
             )
             results = response.get("results", [])
             if results:
@@ -122,7 +126,7 @@ def get_financial_news(company_name: str) -> list[str]:
                 print(f"[TOOL] Получил ответ от get_financial_news (Tavily)")
                 return news_items
         except Exception as e:
-            print(f"[TOOL] Tavily error: {e}, switching to RSS fallback")
+            print(f"[TOOL] Tavily error [{type(e).__name__}]: {e}, switching to RSS fallback")
 
     # Fallback: Google News RSS
     try:
