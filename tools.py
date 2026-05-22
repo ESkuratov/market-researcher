@@ -7,7 +7,7 @@ import requests
 import yfinance as yf
 from langchain_core.tools import tool
 
-HEADERS = {"User-Agent": "MarketResearcher/1.0"}
+HEADERS = {"User-Agent": "MarketResearcher/1.0 (https://github.com/ESkuratov/market-researcher; educational project)"}
 
 @tool
 def get_company_profile(company_name: str) -> str:
